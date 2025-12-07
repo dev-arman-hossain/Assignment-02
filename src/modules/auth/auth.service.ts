@@ -13,13 +13,13 @@ const signUpUser = async (data: any) => {
     "INSERT INTO users (name,email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *",
     [name, email, hashedPass, phone, role]
   );
-  return result;
+  return result.rows[0];
 };
 
 const signInUser = async (email: string, password: string) => {
-  const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [
-    email,
-  ]);
+  const result = await pool.query(`SELECT * FROM users WHERE email = $1`, 
+    [email]
+  );
   if (result.rows.length === 0) return null;
   const user = result.rows[0];
   const isMatch = await bcrypt.compare(password, user.password);

@@ -2,7 +2,11 @@ import { pool } from "../../config/db";
 
 const createVehicle = async (payload: Record<string, unknown>) => {
   const {
-    vehicle_name, type, registration_number, daily_rent_price, availability_status
+    vehicle_name,
+    type,
+    registration_number,
+    daily_rent_price,
+    availability_status,
   } = payload;
 
   console.log(payload);
@@ -25,12 +29,17 @@ const getAllVehicles = async () => {
   return result;
 };
 
-const getVehicleById = async (id: string) => {
-  const result = await pool.query("SELECT * FROM vehicles WHERE id = $1", [id]);
+const getVehicleById = async (vehicleId: string) => {
+  const result = await pool.query(`SELECT * FROM vehicles WHERE id = $1`, [
+    vehicleId,
+  ]);
   return result;
 };
 
-const updateVehicle = async (vehicleId: string, payload: Record<string, unknown>) => {
+const updateVehicle = async (
+  vehicleId: string,
+  payload: Record<string, unknown>
+) => {
   console.log(vehicleId);
   const {
     vehicle_name,
@@ -50,7 +59,37 @@ const updateVehicle = async (vehicleId: string, payload: Record<string, unknown>
       vehicleId,
     ]
   );
-  return result;
+  return result.rows[0];
+};
+
+const deleteVehicle = async (vehicleId: string) => {
+  // Delete vehicle (only if no active bookings exist)
+  const findBooking = await pool.query(
+    `
+        SELECT * FROM bookings WHERE vehicle_id = $1;
+    `,
+    [vehicleId]
+  );
+
+  console.log(findBooking.rows);
+  if (findBooking.rows) {
+  }
+
+  const checkBooking =
+    (findBooking.rowCount as any) > 0 &&
+    findBooking?.rows.find((booking: any) => booking?.status == "active");
+
+  if (checkBooking.status == "active") {
+    throw new Error("Cannot delete vehicle with active bookings");
+  } else {
+    const result = await pool.query(
+      `
+        DELETE FROM vehicles WHERE id = $1 RETURNING *;
+    `,
+      [vehicleId]
+    );
+    return result.rows[0];
+  }
 };
 
 export const vehicleServices = {
@@ -58,4 +97,5 @@ export const vehicleServices = {
   getAllVehicles,
   getVehicleById,
   updateVehicle,
+  deleteVehicle,
 };

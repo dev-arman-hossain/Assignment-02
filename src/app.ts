@@ -14,15 +14,16 @@ app.use(morgan("dev"));
 
 initDB();
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, bro! whats up?");
-});
-
 // routes
 app.use("/api", userRouter);
 app.use("/api", authRouter);
 app.use("/api", vehicleRouter);
 app.use("/api", bookingRouter);
+
+// Test route
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hello! Next Level Developer!");
+});
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({
