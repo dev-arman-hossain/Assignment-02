@@ -1,31 +1,53 @@
-import { pool } from "../../config/db";
 import bcrypt from "bcryptjs";
-import Jwt from "jsonwebtoken";
-import config from "../../config";
+import jwt from "jsonwebtoken";
+import config from "../../config/config";
+import { pool } from "../../config/db";
 
-const signUpUser = async (data: any) => {
-  const { name, email, password, phone, role } = data;
+const createUser = async (payload: Record<string, unknown>) => {
+  const { name, email, password, phone, role } = payload;
 
-  //hash password
-  const hashedPass = await bcrypt.hash(password, 10);
+  const hashedPass = await bcrypt.hash(password as string, 10);
+  console.log(hashedPass);
 
   const result = await pool.query(
-    "INSERT INTO users (name,email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    `
+        INSERT INTO users (name, email, password, phone, role)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *;
+    `,
     [name, email, hashedPass, phone, role]
   );
+
   return result.rows[0];
 };
 
 const signInUser = async (email: string, password: string) => {
-  const result = await pool.query(`SELECT * FROM users WHERE email = $1`, 
+  console.log(email, password);
+
+  const result = await pool.query(
+    `
+        SELECT * FROM users WHERE email = $1;
+      `,
     [email]
   );
-  if (result.rows.length === 0) return null;
+
   const user = result.rows[0];
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return null;
-  const token = Jwt.sign(
-    { name: user.name, email: user.email, role: user.role },
+
+  console.log(user);
+
+  if (!user) {
+    return null;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    return null;
+  }
+
+  console.log(isPasswordValid);
+
+  const token = jwt.sign(
+    {id: user.id ,name: user.name, email: user.email, role: user.role },
     config.jwt_secret as string,
     {
       expiresIn: "7d",
@@ -33,10 +55,10 @@ const signInUser = async (email: string, password: string) => {
   );
 
   const bearerToken = `Bearer ${token}`;
-  return { user, bearerToken };
-};
 
-export const authServices = {
+  return { token: bearerToken, user };
+};
+export const AuthService = {
+  createUser,
   signInUser,
-  signUpUser,
 };

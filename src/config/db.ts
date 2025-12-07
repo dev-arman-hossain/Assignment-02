@@ -1,37 +1,38 @@
 import { Pool } from "pg";
-import config from ".";
+import config from "./config";
 
-//DB
-export const pool = new Pool({
-  connectionString: `${config.connection_str}`,
+const pool = new Pool({
+  connectionString: `${config.database_url}`,
 });
 
-const initDB = async () => {
-  await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            password TEXT NOT NULL CHECK (char_length(password) >= 6),
-            phone VARCHAR(14) UNIQUE NOT NULL,
-            role VARCHAR(100) NOT NULL DEFAULT 'customer'
-        );
-    `);
-  console.log("Database initialized");
+const initializeDB = async () => {
 
-  await pool.query(`
-        CREATE TABLE IF NOT EXISTS vehicles (
-            id SERIAL PRIMARY KEY,
-            vehicle_name TEXT NOT NULL,
-            type VARCHAR(100) NOT NULL,
-            registration_number VARCHAR(100) UNIQUE NOT NULL,
-            daily_rent_price DECIMAL NOT NULL CHECK (daily_rent_price > 0),
-            availability_status TEXT NOT NULL CHECK (availability_status IN ('available', 'Not available'))
-        );
-    `);
-  console.log("Vehicle table initialized");
+  // user table creation
+  await pool.query(`CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL CHECK (LENGTH(password) >= 6),
+    phone VARCHAR(15) NOT NULL,
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'customer')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
 
-  await pool.query(`
+  // Vehicles table creation
+  await pool.query(`CREATE TABLE IF NOT EXISTS vehicles (
+    id SERIAL PRIMARY KEY,
+    vehicle_name VARCHAR(255) NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    registration_number VARCHAR(100) NOT NULL UNIQUE,
+    daily_rent_price NUMERIC(10, 2) NOT NULL,
+    availability_status VARCHAR(50) NOT NULL CHECK (availability_status IN ('available', 'booked')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Bookings table creation with the correct logic for PostgreSQL
+await pool.query(`
   CREATE TABLE IF NOT EXISTS bookings (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -42,7 +43,7 @@ const initDB = async () => {
     status VARCHAR(50) NOT NULL CHECK (status IN ('active', 'cancelled', 'returned'))
   );
 `);
-  console.log("Booking table initialized");
+
 };
 
-export default initDB;
+export { initializeDB, pool };

@@ -1,42 +1,44 @@
 import { NextFunction, Request, Response } from "express";
-import Jwt, { JwtPayload } from "jsonwebtoken";
-import config from "../config";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import config from "../config/config";
 
 interface CustomRequest extends Request {
   user: JwtPayload;
 }
 
-export const auth = (...roles: string[]) => {
+const auth =  (...roles: string[]) => {
+  // Authentication logic here
+
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
-      if (!token || token.startsWith("Bearer ")) {
-       return res.status(401).json({
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({
           success: false,
           message: "Unauthorized",
         });
       }
 
-      const bearerToken = token.split(" ")[1];
+      const token = authHeader.split(" ")[1];
 
-      const decoded = Jwt.verify(
-        bearerToken as string,
+      const decoded = jwt.verify(
+        token as string,
         config.jwt_secret as string
       ) as JwtPayload;
-      console.log({ decoded });
+
+      console.log({ decoded  , authHeader});
       (req as CustomRequest).user = decoded;
-      //["admin"]
-      if (roles.length && !roles.includes(decoded.role as string)) {
-         return res.status(403).json({
+
+      if (roles.length && !roles.includes(decoded.role)) {
+        return res.status(403).json({
           success: false,
           message:
             "Forbidden: You don't have enough permission to access this resource",
         });
       }
-
       next();
     } catch (err: any) {
-       res.status(500).json({
+      res.status(500).json({
         success: false,
         message: "Server Error",
         error: err.message,
@@ -44,3 +46,6 @@ export const auth = (...roles: string[]) => {
     }
   };
 };
+
+
+export default auth;

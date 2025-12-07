@@ -1,37 +1,68 @@
 import { Request, Response } from "express";
-import { authServices } from "./auth.service";
-
+import { AuthService } from "./auth.service";
 
 const signUpUser = async (req: Request, res: Response) => {
+  // Implementation for user signup
   try {
-    const result = await authServices.signUpUser(req.body);
+    const insertedData = await AuthService.createUser(req.body);
     res.status(201).json({
       success: true,
-      message: "User created successfully",
-      data: result.rows[0],
+      message: "User signed up successfully",
+      data: {
+        name: insertedData.name,
+        email: insertedData.email,
+        phone: insertedData.phone,
+        role: insertedData.role,
+        id: insertedData.id,
+      },
     });
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
+
 const signInUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  try {
-    const result = await authServices.signInUser(email, password);
+  // Implementation for user signin
 
-    res.status(201).json({
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Further implementation goes here
+    const user = await AuthService.signInUser(email, password);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
       success: true,
-      message: "User login successfully",
-      data: result,
+      message: "User signed in successfully",
+      data: user,
     });
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
-export const authController = {
+export const AuthController = {
   signUpUser,
-  signInUser
+  signInUser,
 };

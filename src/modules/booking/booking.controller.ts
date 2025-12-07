@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
-import { bookingServices } from "./booking.service";
-import { auth } from "../../middleware/auth";
+import { bookingService } from "./booking.service";
 
 const createBooking = async (req: Request, res: Response) => {
+  // Logic to create a booking
   try {
-    const result = await bookingServices.createBooking(req.body);
+    const result = await bookingService.createBooking(req.body);
+
+    console.log(result);
+    // Send the response once
     res.status(201).json({
       success: true,
       message: "Booking created successfully",
@@ -19,30 +22,36 @@ const createBooking = async (req: Request, res: Response) => {
   }
 };
 
-const getAllBooking = async (req: Request, res: Response) => {
+const getAllBookings = async (req: Request, res: Response) => {
+  // Logic to get all bookings
   try {
-     const authUser = (req as any).user;
-    const result = await bookingServices.getAllBooking(authUser);
+
+    const authUser = (req as any).user;
+
+    const result = await bookingService.getAllBookings(authUser);
+
     res.status(200).json({
       success: true,
-      message: "Vehicles fetched successfully",
+      message: "Bookings retrieved successfully",
       data: result,
     });
   } catch (err: any) {
-    console.error(err);
     res.status(500).json({
       success: false,
-      message: "No vehicles found",
-      data: [],
+      message: "Server Error",
+      error: err.message,
     });
   }
 };
 
 const updateBooking = async (req: Request, res: Response) => {
-   const authUser = (req as any).user; 
-   try{
+  // Logic to update a booking
+
+  const authUser = (req as any).user; 
+
+  try{
     const { bookingId } = req.params;
-    const result = await bookingServices.updateBooking(bookingId as string, req.body , authUser);
+    const result = await bookingService.updateBooking(bookingId as string, req.body , authUser);
 
     if(!result){
       return res.status(404).json({
@@ -67,7 +76,7 @@ const updateBooking = async (req: Request, res: Response) => {
 };
 
 export const bookingController = {
- createBooking,
-  getAllBooking,
-  updateBooking
+  createBooking,
+  getAllBookings,
+  updateBooking,
 };

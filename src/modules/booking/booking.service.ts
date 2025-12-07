@@ -1,5 +1,4 @@
 import { pool } from "../../config/db";
-import { auth } from "../../middleware/auth";
 
 interface BookingPayload {
   customer_id: number;
@@ -35,8 +34,7 @@ const createBooking = async (payload: BookingPayload) => {
     (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
   const total_price = rent_duration_in_days * daily_rent_price;
 
-  const bookingStatus =
-    availability_status === "available" ? "active" : "cancelled";
+  const bookingStatus = availability_status === "available" ? "active" : "cancelled";
 
   try {
     const result = await pool.query(
@@ -48,7 +46,8 @@ const createBooking = async (payload: BookingPayload) => {
     console.log(dailyRentResult.rows);
 
     if (result.rows && result.rows.length > 0) {
-      const status = bookingStatus === "active" && "booked";
+
+      const status = bookingStatus === "active" && "booked" ;
 
       await pool.query(
         `UPDATE vehicles SET availability_status = $1 WHERE id = $2`,
@@ -69,30 +68,44 @@ const createBooking = async (payload: BookingPayload) => {
   }
 };
 
-const getAllBooking = async (authUser: any) => {
-  if (authUser.role === "admin") {
+const getAllBookings = async (authUser: any) => {
+  console.log(authUser);
+   
+  // Check if the user role is admin
+  if (authUser.role == "admin") {
     try {
-      const result = await pool.query("SELECT * FROM bookings");
+
+      const result = await pool.query(`
+        SELECT * FROM bookings;
+      `);
       return result.rows;
-    } catch (err: any) {
-      console.error("Error fetching bookings for admin:", err.message);
+     
+    } catch (error:any) {
+      console.error("Error fetching bookings for admin:", error.message);
       throw new Error("Unable to fetch bookings for admin.");
     }
-  }
-  try {
-    const result = await pool.query(
-      `
-        SELECT * FROM bookings WHERE customer_id = $1;
-      `,
-      [authUser.id]
-    );
+  } 
 
-    console.log(result);
-    return result.rows;
-  } catch (error: any) {
-    console.error("Error fetching bookings for customer:", error.message);
-    throw new Error("Unable to fetch bookings for customer.");
-  }
+  try {
+      const result = await pool.query(`
+        SELECT * FROM bookings WHERE customer_id = $1;
+      `, [authUser.id]);
+
+      console.log(result);
+      return result.rows;
+    } catch (error:any) {
+      console.error("Error fetching bookings for customer:", error.message);
+      throw new Error("Unable to fetch bookings for customer.");
+    }
+
+  // // Check if the user role is customer
+  // else if (authUser.role == "customer") {
+    
+  // } 
+  // // If the role is unauthorized
+  // else {
+  //   throw new Error("Unauthorized action");
+  // }
 };
 
 const updateBooking = async (
@@ -103,6 +116,7 @@ const updateBooking = async (
   const { status } = payload;
 
   try {
+    // Check if the booking exists
     const bookingResult = await pool.query(
       `SELECT * FROM bookings WHERE id = $1`,
       [bookingId]
@@ -192,8 +206,8 @@ const updateBooking = async (
 };
 
 
-export const bookingServices = {
+export const bookingService = {
   createBooking,
-  getAllBooking,
+  getAllBookings,
   updateBooking,
 };
