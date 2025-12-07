@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import Jwt from "jsonwebtoken";
 import config from "../../config";
 
-const createUser = async (data: any) => {
+const signUpUser = async (data: any) => {
   const { name, email, password, phone, role } = data;
 
   //hash password
@@ -16,7 +16,7 @@ const createUser = async (data: any) => {
   return result;
 };
 
-const loginUser = async (email: string, password: string) => {
+const signInUser = async (email: string, password: string) => {
   const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [
     email,
   ]);
@@ -28,15 +28,15 @@ const loginUser = async (email: string, password: string) => {
     { name: user.name, email: user.email, role: user.role },
     config.jwt_secret as string,
     {
-      expiresIn: "2M",
+      expiresIn: "7d",
     }
   );
 
-  console.log(token);
-  return { user, token };
+  const bearerToken = `Bearer ${token}`;
+  return { user, bearerToken };
 };
 
 export const authServices = {
-  loginUser,
-  createUser,
+  signInUser,
+  signUpUser,
 };

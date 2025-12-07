@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 
 import initDB from "./config/db";
-import logger from "./middleware/logger";
 import morgan from "morgan";
 import { userRouter } from "./modules/user/user.routes";
 import { authRouter } from "./modules/auth/auth.routes";
@@ -15,7 +14,7 @@ app.use(morgan("dev"));
 
 initDB();
 
-app.get("/", logger, (req: Request, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello, bro! whats up?");
 });
 
@@ -23,7 +22,7 @@ app.get("/", logger, (req: Request, res: Response) => {
 app.use("/api", userRouter);
 app.use("/api", authRouter);
 app.use("/api", vehicleRouter);
-app.use("/api", bookingRouter)
+app.use("/api", bookingRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({

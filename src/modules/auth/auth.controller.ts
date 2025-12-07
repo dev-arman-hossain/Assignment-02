@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import { authServices } from "./auth.service";
 
 
-const createUser = async (req: Request, res: Response) => {
+const signUpUser = async (req: Request, res: Response) => {
   try {
-    const result = await authServices.createUser(req.body);
+    const result = await authServices.signUpUser(req.body);
 
     res.status(201).json({
       success: true,
@@ -16,17 +16,16 @@ const createUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-const loginUser = async (req: Request, res: Response) => {
+const signInUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
-    const result = await authServices.loginUser(email, password);
+    const result = await authServices.signInUser(email, password);
 
     res.status(201).json({
       success: true,
       message: "User login successfully",
       data: result,
     });
-    // console.log(result.rows[0]);
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -34,6 +33,6 @@ const loginUser = async (req: Request, res: Response) => {
 };
 
 export const authController = {
-  createUser,
-  loginUser
+  signUpUser,
+  signInUser
 };
