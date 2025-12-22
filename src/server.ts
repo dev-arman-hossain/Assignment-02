@@ -6,7 +6,6 @@ import { vehiclesRouter } from "./modules/vehicles/vehicles.routes";
 import { userRouter } from "./modules/user/user.routes";
 import { bookingRoutes } from "./modules/booking/booking.routes";
 
-
 const app = express();
 const PORT = 3000;
 
@@ -17,14 +16,13 @@ app.use(morgan("dev"));
 // Initialize database
 initializeDB()
   .then(() => console.log("Database initialized"))
-  .catch((err:any) => console.error("Error initializing database:", err));
+  .catch((err: any) => console.error("Error initializing database:", err));
 
 // Import and use routes
-app.use("/api" , authRoutes);
+app.use("/api", authRoutes);
 app.use("/api", vehiclesRouter);
-app.use("/api" , userRouter);
-app.use("/api" , bookingRoutes);
-
+app.use("/api", userRouter);
+app.use("/api", bookingRoutes);
 
 // Test route
 app.get("/", (req: Request, res: Response) => {

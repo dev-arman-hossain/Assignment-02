@@ -54,9 +54,9 @@ const signInUser = async (email: string, password: string) => {
     }
   );
 
-  const bearerToken = `Bearer ${token}`;
+  //const bearerToken = `Bearer ${token}`;
 
-  return { token: bearerToken, user };
+  return { token, user };
 };
 export const AuthService = {
   createUser,

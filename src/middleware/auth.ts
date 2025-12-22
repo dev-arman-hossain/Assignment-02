@@ -11,22 +11,22 @@ const auth =  (...roles: string[]) => {
 
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized",
-        });
-      }
+      const token = req.headers.authorization;
+      // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      //   return res.status(401).json({
+      //     success: false,
+      //     message: "Unauthorized",
+      //   });
+      // }
 
-      const token = authHeader.split(" ")[1];
+     // const token = authHeader.split(" ")[1];
 
       const decoded = jwt.verify(
         token as string,
         config.jwt_secret as string
       ) as JwtPayload;
 
-      console.log({ decoded  , authHeader});
+      console.log({ decoded  , token});
       (req as CustomRequest).user = decoded;
 
       if (roles.length && !roles.includes(decoded.role)) {
