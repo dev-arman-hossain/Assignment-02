@@ -99,6 +99,26 @@ const getAllBookings = async (authUser: any) => {
     });
   }
 
+  if (authUser.role === "provider") {
+    return await prisma.booking.findMany({
+      where: {
+        vehicle: {
+          owner_id: authUser.id,
+        },
+      },
+      include: {
+        vehicle: true,
+        customer: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { rent_start_date: "desc" },
+    });
+  }
+
   return await prisma.booking.findMany({
     where: { customer_id: authUser.id },
     include: { vehicle: true },
@@ -136,8 +156,36 @@ const updateBooking = async (
     throw new Error("Customers can only cancel bookings before the start date.");
   }
 
-  // Logic for Admin or Auto-mark
-  if ((authUser.role === "admin" || currentDate >= rentStartDate) && status === "returned") {
+  // Pick Up Logic: Transition to 'ongoing'
+  if (
+    (authUser.role === "admin" || (authUser.role === "provider" && booking.vehicle_id)) &&
+    status === "ongoing" &&
+    booking.status === "active"
+  ) {
+    // Only allow if the provider owns the vehicle
+    if (authUser.role === "provider") {
+      const vehicle = await prisma.vehicle.findUnique({ where: { id: booking.vehicle_id } });
+      if (vehicle?.owner_id !== authUser.id) throw new Error("Unauthorized");
+    }
+
+    return await prisma.booking.update({
+      where: { id },
+      data: { status: "ongoing" },
+    });
+  }
+
+  // Return Logic: Transition to 'returned'
+  if (
+    (authUser.role === "admin" || (authUser.role === "provider" && booking.vehicle_id)) &&
+    status === "returned" &&
+    booking.status === "ongoing"
+  ) {
+    // Only allow if the provider owns the vehicle
+    if (authUser.role === "provider") {
+      const vehicle = await prisma.vehicle.findUnique({ where: { id: booking.vehicle_id } });
+      if (vehicle?.owner_id !== authUser.id) throw new Error("Unauthorized");
+    }
+
     return await prisma.$transaction(async (tx) => {
       const updatedBooking = await tx.booking.update({
         where: { id },

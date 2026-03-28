@@ -18,6 +18,7 @@ const createBooking = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (err: any) {
+    console.error("Error creating booking:", err);
     res.status(400).json({
       success: false,
       message: err.message || "Server Error",
@@ -71,6 +72,7 @@ const updateBooking = async (req: Request, res: Response) => {
     })
 
   }catch(err: any){
+    console.error("Error updating booking status:", err);
     res.status(500).json({
       success: false,
       message: "Server Error",
