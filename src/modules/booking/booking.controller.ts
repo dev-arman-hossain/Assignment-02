@@ -4,7 +4,12 @@ import { bookingService } from "./booking.service";
 const createBooking = async (req: Request, res: Response) => {
   // Logic to create a booking
   try {
-    const result = await bookingService.createBooking(req.body);
+    const authUser = (req as any).user;
+    const bookingPayload = {
+      ...req.body,
+      customer_id: authUser.id
+    };
+    const result = await bookingService.createBooking(bookingPayload);
 
     console.log(result);
     // Send the response once
@@ -14,9 +19,9 @@ const createBooking = async (req: Request, res: Response) => {
       data: result,
     });
   } catch (err: any) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: "Server Error",
+      message: err.message || "Server Error",
       error: err.message,
     });
   }

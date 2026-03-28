@@ -17,6 +17,14 @@ const signUpUser = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
+    // Check if error is a Postgres unique violation
+    if (error.code === '23505' || error.message.includes('unique constraint')) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already in use",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Internal Server Error",

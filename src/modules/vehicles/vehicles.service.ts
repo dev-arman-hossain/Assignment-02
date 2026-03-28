@@ -1,56 +1,50 @@
-import { pool } from "../../config/db";
+import { prisma } from "../../lib/prisma";
 
 const createVehicle = async (payload: Record<string, unknown>) => {
   const {
     vehicle_name,
+    brand,
+    description,
     type,
+    fuel_type,
+    transmission,
+    passenger_capacity,
     registration_number,
     daily_rent_price,
     availability_status,
+    image_url,
   } = payload;
 
-  console.log(payload);
+  const result = await prisma.vehicle.create({
+    data: {
+      vehicle_name: vehicle_name as string,
+      brand: brand as string,
+      description: description as string,
+      type: type as string,
+      fuel_type: fuel_type as string,
+      transmission: transmission as string,
+      passenger_capacity: passenger_capacity as number,
+      registration_number: registration_number as string,
+      daily_rent_price: daily_rent_price as any,
+      availability_status: availability_status as any,
+      image_url: image_url as string,
+    },
+  });
 
-  const Result = await pool.query(
-    `
-        INSERT INTO vehicles (vehicle_name, type, registration_number, daily_rent_price, availability_status)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;
-    `,
-    [
-      vehicle_name,
-      type,
-      registration_number,
-      daily_rent_price,
-      availability_status,
-    ]
-  );
-
-  if (Result.rowCount === 0) {
-    throw new Error("Failed to create vehicle");
-  }
-
-  return Result.rows[0];
+  return result;
 };
 
 const getAllVehicles = async () => {
-  const result = await pool.query(`
-        SELECT * FROM vehicles;
-    `);
-
-  console.log(result.rows);
-
-  return result.rows;
+  const result = await prisma.vehicle.findMany();
+  console.log(result);
+  return result;
 };
 
 const getVehicleById = async (vehicleId: string) => {
-  const result = await pool.query(
-    `
-        SELECT * FROM vehicles WHERE id = $1;
-    `,
-    [vehicleId]
-  );
-  return result.rows[0];
+  const result = await prisma.vehicle.findUnique({
+    where: { id: parseInt(vehicleId) },
+  });
+  return result;
 };
 
 const updateVehicle = async (
@@ -59,59 +53,58 @@ const updateVehicle = async (
 ) => {
   const {
     vehicle_name,
+    brand,
+    description,
     type,
+    fuel_type,
+    transmission,
+    passenger_capacity,
     registration_number,
     daily_rent_price,
     availability_status,
+    image_url,
   } = payload;
-  const result = await pool.query(
-    `
-        UPDATE vehicles
-        SET vehicle_name = $1, type = $2, registration_number = $3, daily_rent_price = $4, availability_status = $5
-        WHERE id = $6
-        RETURNING *;
-    `,
-    [
-      vehicle_name,
-      type,
-      registration_number,
-      daily_rent_price,
-      availability_status,
-      vehicleId,
-    ]
-  );
-  return result.rows[0];
+
+  const result = await prisma.vehicle.update({
+    where: { id: parseInt(vehicleId) },
+    data: {
+      vehicle_name: vehicle_name as string,
+      brand: brand as string,
+      description: description as string,
+      type: type as string,
+      fuel_type: fuel_type as string,
+      transmission: transmission as string,
+      passenger_capacity: passenger_capacity as number,
+      registration_number: registration_number as string,
+      daily_rent_price: daily_rent_price as any,
+      availability_status: availability_status as any,
+      image_url: image_url as string,
+    },
+  });
+
+  return result;
 };
 
 const deleteVehicle = async (vehicleId: string) => {
+  const id = parseInt(vehicleId);
 
-  // Delete vehicle (only if no active bookings exist)
-  const findBooking = await pool.query(
-    `
-        SELECT * FROM bookings WHERE vehicle_id = $1;
-    `,
-    [vehicleId]
-  );
+  // Check for active bookings
+  const activeBooking = await prisma.booking.findFirst({
+    where: {
+      vehicle_id: id,
+      status: "active",
+    },
+  });
 
-console.log(findBooking.rows)
-  if (findBooking.rows) {
-    
-  }
-
-  const checkBooking = findBooking.rowCount as any > 0 && findBooking?.rows.find((booking: any) => booking?.status == "active")
-
- 
-  if (checkBooking.status == "active") {
+  if (activeBooking) {
     throw new Error("Cannot delete vehicle with active bookings");
-  } else {
-    const result = await pool.query(
-      `
-        DELETE FROM vehicles WHERE id = $1 RETURNING *;
-    `,
-      [vehicleId]
-    );
-    return result.rows[0];
   }
+
+  const result = await prisma.vehicle.delete({
+    where: { id },
+  });
+
+  return result;
 };
 
 export const vehiclesService = {

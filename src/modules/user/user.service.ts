@@ -1,10 +1,16 @@
-import { pool } from "../../config/db";
+import { prisma } from "../../lib/prisma";
 
 const getAllUsers = async () => {
-  const result = await pool.query(`
-      SELECT id, name, email, phone, role FROM users;
-  `);
-  return result.rows;
+  const result = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+    },
+  });
+  return result;
 };
 
 const updateUser = async (
@@ -13,38 +19,27 @@ const updateUser = async (
   authUser: any
 ) => {
   const { name, email, phone, role } = payload;
-  console.log(authUser, payload, userId);
+  const id = parseInt(userId);
 
-  if (authUser.role == "admin" || authUser.id == userId) {
+  if (authUser.role === "admin" || authUser.id === id) {
     try {
-      const emailCheck = await pool.query(
-        `SELECT * FROM users WHERE email = $1 AND id != $2`,
-        [email, userId]
-      );
+      const updatedRole = authUser.role === "admin" ? (role as any) : authUser.role;
 
-      if (emailCheck.rows.length > 0) {
+      const result = await prisma.user.update({
+        where: { id },
+        data: {
+          name: name as string,
+          email: email as string,
+          phone: phone as string,
+          role: updatedRole,
+        },
+      });
+
+      return result;
+    } catch (error: any) {
+      if (error.code === 'P2002') {
         throw new Error("The email is already in use by another user.");
       }
-
-      const updatedRole = authUser.role === "admin" ? role : authUser.role;
-
-      // Update the user in the database
-      const result = await pool.query(
-        `
-          UPDATE users
-          SET name = $1, email = $2, phone = $3, role = $4
-          WHERE id = $5
-          RETURNING *;
-        `,
-        [name, email, phone, updatedRole, userId]
-      );
-
-      if (result.rowCount === 0) {
-        throw new Error("User not found or no changes made.");
-      }
-
-      return result.rows[0];
-    } catch (error: any) {
       console.error(error);
       throw new Error(error.message);
     }
@@ -56,27 +51,23 @@ const updateUser = async (
 };
 
 const deleteUser = async (userId: string) => {
-  // Delete user (only if no active bookings exist)
+  const id = parseInt(userId);
 
-  const findBooking = await pool.query(
-    `
-        SELECT * FROM bookings WHERE customer_id = $1;
-    `,
-    [userId]
-  );
+  const activeBooking = await prisma.booking.findFirst({
+    where: {
+      customer_id: id,
+      status: "active",
+    },
+  });
 
-  console.log(findBooking);
-  if ((findBooking.rowCount as any) > 0) {
+  if (activeBooking) {
     throw new Error("Cannot delete user with active bookings");
   }
 
-  const result = await pool.query(
-    `
-      DELETE FROM users WHERE id = $1 RETURNING *;
-  `,
-    [userId]
-  );
-  return result.rows[0];
+  const result = await prisma.user.delete({
+    where: { id },
+  });
+  return result;
 };
 
 export const userService = {

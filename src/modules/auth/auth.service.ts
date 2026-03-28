@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "../../config/config";
-import { pool } from "../../config/db";
+import { prisma } from "../../lib/prisma";
 
 const createUser = async (payload: Record<string, unknown>) => {
   const { name, email, password, phone, role } = payload;
@@ -9,29 +9,25 @@ const createUser = async (payload: Record<string, unknown>) => {
   const hashedPass = await bcrypt.hash(password as string, 10);
   console.log(hashedPass);
 
-  const result = await pool.query(
-    `
-        INSERT INTO users (name, email, password, phone, role)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;
-    `,
-    [name, email, hashedPass, phone, role]
-  );
+  const result = await prisma.user.create({
+    data: {
+      name: name as string,
+      email: email as string,
+      password: hashedPass,
+      phone: phone as string,
+      role: role as any,
+    },
+  });
 
-  return result.rows[0];
+  return result;
 };
 
 const signInUser = async (email: string, password: string) => {
   console.log(email, password);
 
-  const result = await pool.query(
-    `
-        SELECT * FROM users WHERE email = $1;
-      `,
-    [email]
-  );
-
-  const user = result.rows[0];
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
   console.log(user);
 
@@ -47,14 +43,12 @@ const signInUser = async (email: string, password: string) => {
   console.log(isPasswordValid);
 
   const token = jwt.sign(
-    {id: user.id ,name: user.name, email: user.email, role: user.role },
+    { id: user.id, name: user.name, email: user.email, role: user.role },
     config.jwt_secret as string,
     {
       expiresIn: "7d",
     }
   );
-
-  //const bearerToken = `Bearer ${token}`;
 
   return { token, user };
 };
