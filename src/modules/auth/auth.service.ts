@@ -7,7 +7,6 @@ const createUser = async (payload: Record<string, unknown>) => {
   const { name, email, password, phone, role } = payload;
 
   const hashedPass = await bcrypt.hash(password as string, 10);
-  console.log(hashedPass);
 
   const result = await prisma.user.create({
     data: {
@@ -23,13 +22,9 @@ const createUser = async (payload: Record<string, unknown>) => {
 };
 
 const signInUser = async (email: string, password: string) => {
-  console.log(email, password);
-
   const user = await prisma.user.findUnique({
     where: { email },
   });
-
-  console.log(user);
 
   if (!user) {
     return null;
@@ -39,8 +34,6 @@ const signInUser = async (email: string, password: string) => {
   if (!isPasswordValid) {
     return null;
   }
-
-  console.log(isPasswordValid);
 
   const token = jwt.sign(
     { id: user.id, name: user.name, email: user.email, role: user.role },

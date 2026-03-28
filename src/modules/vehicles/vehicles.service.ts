@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 
-const createVehicle = async (payload: Record<string, unknown>) => {
+const createVehicle = async (payload: Record<string, unknown>, ownerId: number) => {
   const {
     vehicle_name,
     brand,
@@ -23,11 +23,12 @@ const createVehicle = async (payload: Record<string, unknown>) => {
       type: type as string,
       fuel_type: fuel_type as string,
       transmission: transmission as string,
-      passenger_capacity: passenger_capacity as number,
+      passenger_capacity: (passenger_capacity as number) || 4,
       registration_number: registration_number as string,
       daily_rent_price: daily_rent_price as any,
       availability_status: availability_status as any,
       image_url: image_url as string,
+      owner_id: ownerId,
     },
   });
 
@@ -35,22 +36,41 @@ const createVehicle = async (payload: Record<string, unknown>) => {
 };
 
 const getAllVehicles = async () => {
-  const result = await prisma.vehicle.findMany();
-  console.log(result);
-  return result;
+  return await prisma.vehicle.findMany();
+};
+
+const getMyVehicles = async (ownerId: number) => {
+  return await prisma.vehicle.findMany({
+    where: { owner_id: ownerId },
+  });
 };
 
 const getVehicleById = async (vehicleId: string) => {
-  const result = await prisma.vehicle.findUnique({
+  return await prisma.vehicle.findUnique({
     where: { id: parseInt(vehicleId) },
   });
-  return result;
 };
 
 const updateVehicle = async (
   vehicleId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  authUser: any
 ) => {
+  const id = parseInt(vehicleId);
+  
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id },
+  });
+
+  if (!vehicle) {
+    throw new Error("Vehicle not found");
+  }
+
+  // Ownership check: Only owner or admin can update
+  if (authUser.role !== "admin" && vehicle.owner_id !== authUser.id) {
+    throw new Error("You are not authorized to update this vehicle.");
+  }
+
   const {
     vehicle_name,
     brand,
@@ -66,7 +86,7 @@ const updateVehicle = async (
   } = payload;
 
   const result = await prisma.vehicle.update({
-    where: { id: parseInt(vehicleId) },
+    where: { id },
     data: {
       vehicle_name: vehicle_name as string,
       brand: brand as string,
@@ -74,7 +94,7 @@ const updateVehicle = async (
       type: type as string,
       fuel_type: fuel_type as string,
       transmission: transmission as string,
-      passenger_capacity: passenger_capacity as number,
+      passenger_capacity: (passenger_capacity as number) || 4,
       registration_number: registration_number as string,
       daily_rent_price: daily_rent_price as any,
       availability_status: availability_status as any,
@@ -85,8 +105,21 @@ const updateVehicle = async (
   return result;
 };
 
-const deleteVehicle = async (vehicleId: string) => {
+const deleteVehicle = async (vehicleId: string, authUser: any) => {
   const id = parseInt(vehicleId);
+
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id },
+  });
+
+  if (!vehicle) {
+    throw new Error("Vehicle not found");
+  }
+
+  // Ownership check
+  if (authUser.role !== "admin" && vehicle.owner_id !== authUser.id) {
+    throw new Error("You are not authorized to delete this vehicle.");
+  }
 
   // Check for active bookings
   const activeBooking = await prisma.booking.findFirst({
@@ -110,6 +143,7 @@ const deleteVehicle = async (vehicleId: string) => {
 export const vehiclesService = {
   createVehicle,
   getAllVehicles,
+  getMyVehicles,
   getVehicleById,
   updateVehicle,
   deleteVehicle,

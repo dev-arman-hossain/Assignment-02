@@ -2,20 +2,16 @@ import { Request, Response } from "express";
 import { vehiclesService } from "./vehicles.service";
 
 const createVehicle = async (req: Request, res: Response) => {
-  // Logic to create a vehicle
   try {
-    const result = await vehiclesService.createVehicle(req.body);
+    const authUser = (req as any).user;
+    const result = await vehiclesService.createVehicle(req.body, authUser.id);
 
-    console.log(result);
-
-    // Send the response once
     res.status(201).json({
       success: true,
       message: "Vehicle created successfully",
       data: result,
     });
   } catch (err: any) {
-    // Handle error
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -25,8 +21,6 @@ const createVehicle = async (req: Request, res: Response) => {
 };
 
 const getAllVehicles = async (req: Request, res: Response) => {
-  // Logic to get all vehicles
-
   try {
     const result = await vehiclesService.getAllVehicles();
     if (result.length === 0) {
@@ -50,14 +44,31 @@ const getAllVehicles = async (req: Request, res: Response) => {
   }
 };
 
-const getVehicleById = async (req: Request, res: Response) => {
-  // Logic to get a vehicle by ID
-  try{
+const getMyVehicles = async (req: Request, res: Response) => {
+  try {
+    const authUser = (req as any).user;
+    const result = await vehiclesService.getMyVehicles(authUser.id);
+    
+    res.status(200).json({
+      success: true,
+      message: "Your vehicles retrieved successfully",
+      data: result,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: err.message,
+    });
+  }
+};
 
+const getVehicleById = async (req: Request, res: Response) => {
+  try {
     const vehicleId = req.params.vehicleId;
     const result = await vehiclesService.getVehicleById(vehicleId as string);
 
-    if(!result){
+    if (!result) {
       return res.status(404).json({
         success: false,
         message: "Vehicle not found",
@@ -68,8 +79,8 @@ const getVehicleById = async (req: Request, res: Response) => {
       success: true,
       message: "Vehicle retrieved successfully",
       data: result,
-    })
-  }catch(err: any){
+    });
+  } catch (err: any) {
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -79,13 +90,12 @@ const getVehicleById = async (req: Request, res: Response) => {
 };
 
 const updateVehicle = async (req: Request, res: Response) => {
-  // Logic to update a vehicle
+  try {
+    const { vehicleId } = req.params;
+    const authUser = (req as any).user;
+    const result = await vehiclesService.updateVehicle(vehicleId as string, req.body, authUser);
 
-  try{
-    const {vehicleId} = req.params;
-    const result = await vehiclesService.updateVehicle(vehicleId as string, req.body);
-
-    if(!result){
+    if (!result) {
       return res.status(404).json({
         success: false,
         message: "Vehicle not found",
@@ -96,9 +106,8 @@ const updateVehicle = async (req: Request, res: Response) => {
       success: true,
       message: "Vehicle updated successfully",
       data: result,
-    })
-
-  }catch(err: any){
+    });
+  } catch (err: any) {
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -108,11 +117,12 @@ const updateVehicle = async (req: Request, res: Response) => {
 };
 
 const deleteVehicle = async (req: Request, res: Response) => {
-  // Logic to delete a vehicle
-  try{
-    const {vehicleId} = req.params;
-    const result = await vehiclesService.deleteVehicle(vehicleId as string);
-    if(!result){
+  try {
+    const { vehicleId } = req.params;
+    const authUser = (req as any).user;
+    const result = await vehiclesService.deleteVehicle(vehicleId as string, authUser);
+    
+    if (!result) {
       return res.status(404).json({
         success: false,
         message: "Vehicle not found",
@@ -123,8 +133,8 @@ const deleteVehicle = async (req: Request, res: Response) => {
       success: true,
       message: "Vehicle deleted successfully",
       data: result,
-    })
-  }catch(err: any){
+    });
+  } catch (err: any) {
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -136,6 +146,7 @@ const deleteVehicle = async (req: Request, res: Response) => {
 export const vehiclesController = {
   createVehicle,
   getAllVehicles,
+  getMyVehicles,
   getVehicleById,
   updateVehicle,
   deleteVehicle,

@@ -11,7 +11,6 @@ const createBooking = async (req: Request, res: Response) => {
     };
     const result = await bookingService.createBooking(bookingPayload);
 
-    console.log(result);
     // Send the response once
     res.status(201).json({
       success: true,

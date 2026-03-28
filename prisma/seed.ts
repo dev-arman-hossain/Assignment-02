@@ -41,6 +41,18 @@ async function main() {
     },
   });
 
+  // Create Car Provider
+  const providerPassword = await bcrypt.hash("provider123", 10);
+  const carProvider = await prisma.user.create({
+    data: {
+      name: "Sam Smith Rentals",
+      email: "sam@rentals.com",
+      password: providerPassword,
+      phone: "01900000000",
+      role: "provider",
+    },
+  });
+
   // Create Vehicles
   const vehicles = [
     {
@@ -55,6 +67,7 @@ async function main() {
       daily_rent_price: 150.00,
       availability_status: "available",
       image_url: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1200&auto=format&fit=crop",
+      owner_id: admin.id,
     },
     {
       vehicle_name: "Toyota Camry Hybrid",
@@ -68,6 +81,7 @@ async function main() {
       daily_rent_price: 65.00,
       availability_status: "available",
       image_url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?q=80&w=1200&auto=format&fit=crop",
+      owner_id: admin.id,
     },
     {
       vehicle_name: "BMW X5 M-Sport",
@@ -81,6 +95,7 @@ async function main() {
       daily_rent_price: 120.00,
       availability_status: "available",
       image_url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1200&auto=format&fit=crop",
+      owner_id: admin.id,
     },
     {
       vehicle_name: "Audi A8 L",
@@ -94,6 +109,7 @@ async function main() {
       daily_rent_price: 180.00,
       availability_status: "available",
       image_url: "https://images.unsplash.com/photo-1606155096413-0a96b23d9029?q=80&w=1200&auto=format&fit=crop",
+      owner_id: admin.id,
     },
     {
       vehicle_name: "Mercedes-Benz G-Wagon",
@@ -107,6 +123,7 @@ async function main() {
       daily_rent_price: 250.00,
       availability_status: "available",
       image_url: "https://images.unsplash.com/photo-1520031441872-265e4ff70366?q=80&w=1200&auto=format&fit=crop",
+      owner_id: carProvider.id,
     }
   ];
 
