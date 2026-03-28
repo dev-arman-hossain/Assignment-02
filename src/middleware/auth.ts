@@ -6,7 +6,7 @@ interface CustomRequest extends Request {
   user: JwtPayload;
 }
 
-const auth =  (...roles: string[]) => {
+const auth = (...roles: string[]) => {
   // Authentication logic here
 
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -19,14 +19,14 @@ const auth =  (...roles: string[]) => {
       //   });
       // }
 
-     // const token = authHeader.split(" ")[1];
+      // const token = authHeader.split(" ")[1];
 
       const decoded = jwt.verify(
         token as string,
         config.jwt_secret as string
       ) as JwtPayload;
 
-      console.log({ decoded  , token});
+      console.log({ decoded, token });
       (req as CustomRequest).user = decoded;
 
       if (roles.length && !roles.includes(decoded.role)) {

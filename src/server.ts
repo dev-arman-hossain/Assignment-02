@@ -7,7 +7,7 @@ import { userRouter } from "./modules/user/user.routes";
 import { bookingRoutes } from "./modules/booking/booking.routes";
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
 // use middleware
 app.use(express.json());
